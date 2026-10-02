@@ -2,7 +2,7 @@
 <html lang="sv"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Företagsgolf – Win Win Golf</title>
+<title>Vårt team – Win Win Golf</title>
 <meta name="description" content="Win Win Golf arrangerar golftävlingar och golfresor för kompisgäng, företag och sponsorer.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&amp;family=Public+Sans:wght@400;600&amp;display=swap">
 <style>
@@ -35,6 +35,7 @@ header .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:spac
 .logo{font:800 1.3rem "Bricolage Grotesque",sans-serif;color:var(--head);text-decoration:none;display:inline-flex;align-items:center;gap:.55rem}
 .brand{display:inline-flex;align-items:center;gap:.55rem}
 .logo-img{height:2.4rem;width:auto;display:block;filter:var(--logof);transition:height .3s}
+.logo-fx{filter:var(--logof)}
 nav{display:flex;flex-wrap:wrap;gap:.1rem 1.25rem}
 nav a{text-decoration:none;font-weight:600;padding:.4rem 0;border-bottom:3px solid transparent}
 nav a:hover{border-color:var(--line)}
@@ -127,7 +128,7 @@ const ST={open:"Öppen",full:"Fullbokad",done:"Genomförd",soon:"Kommande"};
 const OPT=(p,k,cur,list)=>`<select data-io="${p}" data-k="${k}" aria-label="${k}">${list.map(([v,l])=>`<option value="${v}"${(cur||"")===v?" selected":""}>${l}</option>`).join("")}</select>`;
 const IP=(p,full)=>{if(!edit)return"";const[u,o]=parse(get(p));return `<div class="ic"><button class="mini" data-img="${p}">Byt bild</button>${u?`<button class="mini" data-imgx="${p}">Ta bort bild</button>`:""}${full?"":OPT(p,"w",o.w,[["","Bredd: auto"],["25","25 %"],["33","33 %"],["50","50 %"],["66","66 %"],["75","75 %"],["100","100 %"]])+OPT(p,"r",o.r,[["","Form: original"],["16/9","16:9"],["3/2","3:2"],["4/3","4:3"],["1/1","Kvadrat"],["21/9","Bred 21:9"],["3/1","Banner 3:1"]])+OPT(p,"a",o.a,[["","Vänster"],["c","Mitten"],["r","Höger"]])}</div>`};
 const IM=(p,c="",hero)=>{const[u,o]=parse(get(p));let st="";if(!hero)st=`width:${o.w?o.w+"%":(u?"fit-content":"100%")};max-width:100%;`+(o.a==="c"?"margin-inline:auto;":o.a==="r"?"margin-left:auto;":"")+(o.r?`aspect-ratio:${o.r};`:"");
-const w=`<div class="imw ${c}${o.r&&!hero?" fx":""}${u?"":" ph"}"${st?` style="${st}"`:""}>${u?`<img src="${esc(src(u))}" alt="">`:""}</div>`;return hero?w:`<div class="imx">${w}${IP(p)}</div>`};
+const w=`<div class="imw ${c}${o.r&&!hero?" fx":""}${u?"":" ph"}"${st?` style="${st}"`:""}>${u?`<img src="${esc(src(u))}" alt=""${u===C.site.logo?' class="logo-fx"':""}>`:""}</div>`;return hero?w:`<div class="imx">${w}${IP(p)}</div>`};
 const PL={hem:"Startsida",intresseanmalan:"Intresseanmälan",anmalan:"Anmälan"};
 const TO=p=>edit?`<select class="to" data-to="${p}.to" aria-label="Länk till sida"><option value="">Ingen länk</option>${Object.keys(C.pages).filter(k=>k!=="anmalan").map(k=>`<option value="${k}"${get(p+".to")===k?" selected":""}>Länk: ${esc(PL[k]||k)}</option>`).join("")}${ROWS().map(r=>`<option value="anmalan/${esc(r.id)}"${get(p+".to")==="anmalan/"+r.id?" selected":""}>Anmälan: ${esc(r.name)}</option>`).join("")}</select>`:"";
 const MORE=(b,P)=>(b.to?L("#/"+b.to,"more",b.more!=null?T(P+".more"):"Läs mer &gt;"):"")+TO(P);
