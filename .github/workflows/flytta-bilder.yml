@@ -1,0 +1,95 @@
+name: Flytta bilder till repot
+
+# Kör manuellt: fliken Actions -> "Flytta bilder till repot" -> Run workflow.
+# Hämtar alla bilder som sidan visar från gamla WordPress-sidan,
+# sparar dem i mappen bilder/ och ändrar index.html så att den använder dem.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  flytta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Hämta bilder och uppdatera index.html
+        shell: python
+        run: |
+          import json, os, re, sys, urllib.request, urllib.parse
+
+          html = open("index.html", encoding="utf-8").read()
+          m = re.search(r'(<script id="data" type="application/json">)(.*?)(</script>)', html, re.S)
+          if not m:
+              sys.exit("Hittade inte datablocket i index.html")
+          C = json.loads(m.group(2))
+          base = (C.get("site", {}).get("base") or "https://winwingolf.se/wp-content/uploads/")
+          if not base.endswith("/"):
+              base += "/"
+
+          def safe(path):
+              p = urllib.parse.unquote(path)
+              for a, b in (("å","a"),("ä","a"),("ö","o"),("Å","A"),("Ä","A"),("Ö","O")):
+                  p = p.replace(a, b)
+              return re.sub(r"[^A-Za-z0-9._/-]+", "-", p)
+
+          done, ok, fail = {}, 0, []
+
+          def fetch(path):
+              global ok
+              if path in done:
+                  return done[path]
+              local = "bilder/" + safe(path)
+              if not os.path.exists(local):
+                  url = base + path
+                  req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (WinWinGolf bildflytt)"})
+                  try:
+                      with urllib.request.urlopen(req, timeout=60) as r:
+                          data = r.read()
+                      if len(data) < 100:
+                          raise ValueError("för liten fil")
+                  except Exception as e:
+                      print(f"MISSLYCKADES: {url} ({e})")
+                      fail.append(url)
+                      done[path] = None
+                      return None
+                  os.makedirs(os.path.dirname(local), exist_ok=True)
+                  open(local, "wb").write(data)
+                  print(f"Hämtad: {url} -> {local}")
+              ok += 1
+              done[path] = local
+              return local
+
+          def walk(o):
+              items = o.items() if isinstance(o, dict) else enumerate(o) if isinstance(o, list) else []
+              for k, v in list(items):
+                  if isinstance(v, str) and v.startswith("u:"):
+                      path, sep, opts = v[2:].partition("|")
+                      local = fetch(path)
+                      if local:
+                          o[k] = local + sep + opts
+                  elif isinstance(v, (dict, list)):
+                      walk(v)
+
+          walk(C)
+          js = json.dumps(C, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+          html = html[:m.start(2)] + js + html[m.end(2):]
+          open("index.html", "w", encoding="utf-8").write(html)
+          print(f"\nKlart: {ok} bilder flyttade, {len(fail)} misslyckades.")
+          for u in fail:
+              print("  saknas:", u)
+
+      - name: Spara i repot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git add bilder index.html
+          if git diff --cached --quiet; then
+            echo "Inga ändringar att spara."
+          else
+            git commit -m "Flytta bilder från winwingolf.se in i repot"
+            git push
+          fi
