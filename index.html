@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="sv" data-theme="dark" style="color-scheme: dark;"><head>
+<html lang="sv"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Win Win Golf</title>
+<meta name="description" content="Win Win Golf arrangerar golftävlingar och golfresor för kompisgäng, företag och sponsorer.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&amp;family=Public+Sans:wght@400;600&amp;display=swap">
 <style>
 :root{--logof:none;--bg:#fff;--sky:#e6eff1;--head:#17392e;--ink:#14201b;--line:#c9d6d0;--flag:#f2c230;--pine:#17392e;
@@ -148,15 +149,15 @@ let CUR=null;
 const ROWS=()=>Object.values(C.pages).flatMap(pg=>pg.blocks.filter(b=>b.t==="score").flatMap(b=>b.rows));
 const ids=()=>ROWS().forEach(r=>{if(!r.id)r.id="t"+Date.now().toString(36)+Math.random().toString(36).slice(2,5)});
 const cur=()=>{const[k,id]=(location.hash.replace(/^#\/?/,"")||"hem").split("/");CUR=null;if(k==="anmalan"){const R=ROWS();CUR=R.find(r=>r.id===id)||R.find(r=>r.status==="open")||null}return C.pages[k]?k:"hem"};
-const F=v=>!edit&&CUR?String(v).replace(/\{tävling\}/g,CUR.name).replace(/\{datum\}/g,CUR.date):v;
-function render(){ids();const k=cur();let n=0;document.body.classList.toggle("edit",edit);C.menu.forEach(m=>PL[m.page]=m.label);
+const F=v=>edit||v==null?(v==null?"":v):String(v).replace(/\{tävling\}/g,CUR?CUR.name:"").replace(/\{datum\}/g,CUR?CUR.date:"");
+function render(){ids();const k=cur();{const lb=k==="hem"?"":k==="anmalan"&&CUR?"Anmälan: "+CUR.name:(C.menu.find(m=>m.page===k)||{}).label||PL[k]||"";document.title=lb?lb+" – "+C.site.name:C.site.name}let n=0;document.body.classList.toggle("edit",edit);C.menu.forEach(m=>PL[m.page]=m.label);
 const blocks=C.pages[k].blocks.map((b,i)=>{const P=`pages.${k}.blocks.${i}`,tb=edit?`<div class="wrap tb"><button class="mini" data-mv="${i}" data-d="-1">↑ Upp</button><button class="mini" data-mv="${i}" data-d="1">↓ Ner</button><button class="mini" data-rm="${i}">Ta bort avsnitt</button></div>`:"";const h=tb+B[b.t](b,P,i,n);if(b.t==="it")n++;return h}).join("");
 const ms=edit?`<div class="wrap tb">Meny: ${C.menu.map((m,i)=>`<input class="ml" data-ml="${i}" value="${esc(m.label)}" aria-label="Menynamn"><button class="mini" data-mdel="${i}" aria-label="Ta bort">×</button>`).join(" ")}<button class="mini" data-newpage>+ Ny sida</button><br>Bildmapp: <input data-base="" value="${esc(C.site.base||"")}" style="width:min(28rem,100%)" aria-label="Bildmapp"><br>Anmälningsmejl (EmailJS): Service-ID <input data-ejs="service" value="${esc(EJ().service||"")}" style="width:9rem"> Public key <input data-ejs="key" value="${esc(EJ().key||"")}" style="width:11rem"> Mall-ID till oss <input data-ejs="admin" value="${esc(EJ().admin||"")}" style="width:9rem">${U?"":GHP()}</div>`:"";
 const pal=edit?`<div class="pal wrap">Lägg till avsnitt: ${Object.keys(NEW).map(t=>`<button class="mini" data-nb="${t}">${NL[t]}</button>`).join("")}</div>`:"";
 $("#app").innerHTML=`<header><div class="wrap">${edit?`<span class="brand">${C.site.logo?`<img class="logo-img" src="${esc(src(C.site.logo))}" alt="">`:""}${T("site.name","span","logo")}</span>`:`<a class="logo" href="#/">${C.site.logo?`<img class="logo-img" src="${esc(src(C.site.logo))}" alt="">`:""}${esc(C.site.name)}</a>`}<nav aria-label="Huvudmeny">${C.menu.map(m=>`<a href="#/${m.page}"${m.page===k?' aria-current="page"':""}>${esc(m.label)}</a>`).join("")}<a href="#/intresseanmalan"${k==="intresseanmalan"?' aria-current="page"':""}>Intresseanmälan</a></nav></div></header>${ms}<main>${blocks}${pal}</main><footer><div class="wrap"><h3>${esc(C.site.name)}</h3>${T("site.tag","p")}<p><a href="#/om-oss">Läs mer</a></p><h3>Kontakt</h3><p>${edit?T("site.email")+"<br>"+T("site.phone"):`<a href="mailto:${esc(C.site.email)}">${esc(C.site.email)}</a><br><a href="tel:${esc(C.site.phone.replace(/[^0-9+]/g,""))}">${esc(C.site.phone)}</a>`}</p>${T("site.copy","p")}</div></footer>`;bar()}
 function bar(msg){const b=$("#bar");if(!(U||/[?&]redigera/.test(location.search))){b.hidden=true;return}document.body.classList.add("canedit");b.hidden=false;
 b.innerHTML=edit?`<span>${msg||"Klicka på en text för att ändra den"}</span>${U?'<button class="btn" data-a="save">Spara</button>':'<button class="btn" data-a="ghsave">Spara på webbplatsen</button>'}<button class="btn" data-a="dl">Ladda ner sidan</button><button class="btn ghost" data-a="cancel">Avbryt</button>`:`<button class="btn" data-a="edit">Redigera sidan</button>`}
-function snap(){const c=document.documentElement.cloneNode(true),b=c.querySelector("#bar");c.querySelector("#app").innerHTML="";b.innerHTML="";b.hidden=true;c.querySelector("body").className="";c.querySelector("#data").textContent=JSON.stringify(C).replace(/</g,"\\u003c");return "<!doctype html>\n"+c.outerHTML}
+function snap(){const c=document.documentElement.cloneNode(true),b=c.querySelector("#bar");c.removeAttribute("data-theme");c.removeAttribute("style");c.removeAttribute("class");c.querySelector("#app").innerHTML="";b.innerHTML="";b.hidden=true;c.querySelector("body").className="";c.querySelector("#data").textContent=JSON.stringify(C).replace(/</g,"\\u003c");return "<!doctype html>\n"+c.outerHTML}
 const GH=()=>{try{return JSON.parse(localStorage.getItem("wwg-gh")||"{}")}catch(e){return{}}};
 const GHs=o=>{try{localStorage.setItem("wwg-gh",JSON.stringify({...GH(),...o}))}catch(e){}};
 const GHP=()=>{const g=GH(),f=(k,l,t="text",w="9rem")=>`${l} <input data-gh="${k}" type="${t}" value="${esc(g[k]||"")}" style="width:${w}" aria-label="${l}" autocomplete="off">`;return `<br>Publicering via GitHub: ${f("user","Användare")} ${f("repo","Repo")} ${f("branch","Gren","text","5rem")} ${f("token","Token","password","12rem")}`};
@@ -167,7 +168,7 @@ let n=0;const walk=async o=>{for(const k in o){const v=o[k];if(typeof v==="strin
 try{bar("Sparar…");await walk(C);render();bar("Sparar sidan…");await send("index.html",btoa(unescape(encodeURIComponent(snap()))),"Uppdaterad via webbredigering");bar("Sparat! Ändringen syns på sidan om cirka en minut.")}catch(e){bar("Kunde inte spara (fel "+e.message+"). Kontrollera uppgifterna under menyn.")}}
 const EJ=()=>C.site.ejs||{};
 async function signup(f){const m=f.querySelector(".msg"),btn=f.querySelector("button"),j=EJ(),b=C.pages[cur()].blocks.find(x=>x.t==="signup")||{},tv=CUR?CUR.name:"",tpl=(CUR&&CUR.tpl)||b.tpl;
-if(!j.service||!j.key||!tpl){m.textContent="Anmälan är inte öppen ännu. Kontakta oss på "+C.site.email+".";return}
+if(!j.service||!j.key||!tpl){location.href=`mailto:${C.site.email}?subject=${encodeURIComponent("Anmälan: "+tv+(CUR?" ("+CUR.date+")":""))}&body=${encodeURIComponent(`Tävling: ${tv}\nNamn: ${f.namn.value.trim()}\nPartner: ${f.partner.value.trim()}\nTelefon: ${f.tel.value.trim()}\nMejl: ${f.epost.value.trim()}`)}`;m.textContent="Ditt mejlprogram öppnas med anmälan ifylld – tryck Skicka där för att bli anmäld.";return}
 const prm={tavling:tv,namn:f.namn.value.trim(),partner:f.partner.value.trim(),telefon:f.tel.value.trim(),epost:f.epost.value.trim(),to_email:f.epost.value.trim(),reply_to:C.site.email,admin_email:C.site.email};
 const go=t=>fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service_id:j.service,template_id:t,user_id:j.key,template_params:prm})}).then(r=>{if(!r.ok)throw new Error(r.status)});
 btn.disabled=true;m.textContent="Skickar anmälan…";
@@ -188,7 +189,7 @@ else if(d.a==="save"){bar("Sparar…");try{await(await claude.use("artifact")).p
 else if(d.imgx){set(d.imgx,put("",parse(get(d.imgx))[1]));render()}
 else if(d.newpage!==undefined){let n=1;while(C.pages["sida-"+n])n++;const k="sida-"+n;C.pages[k]={blocks:[{t:"h1",x:"Ny sida"},{t:"p",x:"Skriv din text här."}]};C.menu.push({label:"Ny sida",page:k});location.hash="#/"+k}
 else if(d.mdel!==undefined){C.menu.splice(+d.mdel,1);render()}
-else if(d.add){const a=get(d.add),n={};for(const k in a[0])n[k]=k==="img"||k==="id"||k==="tpl"||k==="to"?"":k==="status"?"open":k==="name"?"Ny tävling":k==="date"?"Datum":"Ny text";a.push(n);render()}
+else if(d.add){const a=get(d.add),n={},bt=(get(d.add.split(".").slice(0,-1).join("."))||{}).t,base=a[0]||{score:{name:"",date:"",status:"",id:"",tpl:""},list:{h:"",x:""},cards:{img:"",h:"",x:""}}[bt]||{};for(const k in base)n[k]=k==="img"||k==="id"||k==="tpl"||k==="to"?"":k==="status"?"open":k==="name"?"Ny tävling":k==="date"?"Datum":"Ny text";a.push(n);render()}
 else if(d.del){const k=d.del.split("."),i=k.pop();get(k.join(".")).splice(+i,1);render()}
 else if(d.mv){const a=pg(),i=+d.mv,j=i+ +d.d;if(j>=0&&j<a.length){[a[i],a[j]]=[a[j],a[i]];render()}}
 else if(d.rm){pg().splice(+d.rm,1);render()}
